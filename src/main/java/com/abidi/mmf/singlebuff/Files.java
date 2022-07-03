@@ -41,9 +41,8 @@ public class Files {
     }
 
     public void reset() throws IOException {
-        sharedBuffer.setLength(0);
-        readerSeqNum.setLength(0);
-        writerSeqNum.setLength(0);
-
+        sharedBuffer.writeLong(0);
+        writerSeqNum.writeLong(0);
+        readerSeqNum.writeLong(0);
     }
 }

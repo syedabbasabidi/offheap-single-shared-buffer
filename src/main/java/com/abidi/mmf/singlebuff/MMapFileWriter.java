@@ -1,5 +1,6 @@
 package com.abidi.mmf.singlebuff;
 
+import java.lang.invoke.VarHandle;
 import java.nio.MappedByteBuffer;
 
 public class MMapFileWriter {
@@ -27,6 +28,7 @@ public class MMapFileWriter {
             do {
 
                 dataBuffer.putLong(data);    //write data to shared buffer
+                VarHandle.storeStoreFence(); // This is for non-IA
                 producerContext.putLong(data); //seq number that should be consumed by the reader
                 this.producerFlush = data;  //ensure data is pushed to cache
 
@@ -45,9 +47,9 @@ public class MMapFileWriter {
 
     private long hasConsumerRead(MappedByteBuffer dataBuffer, MappedByteBuffer producerContext, MappedByteBuffer consumerBuffer, long lastConsumedValue) {
 
-        while (true) { //busy wait until consumer consimes the messages
+        while (true) { //busy wait until consumer consumes the message
             val = this.producerFlush;  //read volatile to load the latest consumer stats
-            long valueConsumed = consumerBuffer.getLong();  //if consumer has consumed it, it would increase it's counter for write to write new data
+            long valueConsumed = consumerBuffer.getLong();  //if consumer has consumed it, it would increase its counter to let writer write new data
             consumerBuffer.rewind();
             if (valueConsumed != 0 && valueConsumed > lastConsumedValue) { //ensure consumer value is read by checking seq num
                 lastConsumedValue = valueConsumed;
