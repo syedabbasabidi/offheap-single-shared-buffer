@@ -6,7 +6,7 @@ public class MMFileReader {
 
     public static long val;
     private volatile int readerFlush;
-    private long arr[] = new long[Files.SIZE + 10_000];
+    private long arr[] = new long[Files.SIZE];
 
 
     public static void main(String[] args) {
@@ -26,26 +26,27 @@ public class MMFileReader {
             long lastProducerSeqNum = 0;
             long startTime = System.nanoTime();
             int data = 1;
-            do {
+            while (!allMessagesRead(startTime, data)) {
 
                 lastProducerSeqNum = checkIfProducerHasWrittenNewMessage(dataBuffer, producerContext, consumerContext, lastProducerSeqNum);
                 val = dataBuffer.getLong();
-                arr[data] = val;
-                consumerContext.putLong(data++);
+                arr[data - 1] = val;
+                consumerContext.putLong(data);
                 this.readerFlush = data;
                 printStatus(data);
+                data++;
+            }
 
-            } while (!allMessagesRead(startTime, data));
-
+            consumerContext.force();
             files.close();
         }
         catch (Exception exp) {
-            System.out.println(exp);
+            System.out.println("Reader crashed " + exp);
         }
     }
 
     private boolean allMessagesRead(long startTime, int data) {
-        if (data >= Files.SIZE) {
+        if (data > Files.SIZE) {
             System.out.println("Completed in " + ((System.nanoTime() - startTime) / 1_000_000) + " ms");
             return true;
         }

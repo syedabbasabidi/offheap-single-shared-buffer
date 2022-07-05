@@ -20,5 +20,13 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>jlbh</artifactId>
+            <version>1.23ea0</version>
+        </dependency>
+    </dependencies>
+
 
 </project>

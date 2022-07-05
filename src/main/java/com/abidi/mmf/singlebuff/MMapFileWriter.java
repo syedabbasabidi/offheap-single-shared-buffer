@@ -9,10 +9,10 @@ public class MMapFileWriter {
     private volatile int producerFlush;
 
     public static void main(String[] args) {
-        new MMapFileWriter().writer();
+        new MMapFileWriter().run();
     }
 
-    private void writer() {
+    private void run() {
 
         try {
             Files files = new Files();
@@ -22,27 +22,35 @@ public class MMapFileWriter {
             MappedByteBuffer consumerContext = files.getConsumerContext();
 
             int data = 1;
-            long lastConsumedValue = 0;
+            long seqNumberOfLastConsumedMsg = 0;
             long startTime = System.nanoTime();
 
-            do {
+            while (!allMessagesAreWritten(data, startTime)) {
 
-                dataBuffer.putLong(data);    //write data to shared buffer
-                VarHandle.storeStoreFence(); // This is for non-IA
-                producerContext.putLong(data); //seq number that should be consumed by the reader
-                this.producerFlush = data;  //ensure data is pushed to cache
-
-                lastConsumedValue = hasConsumerRead(dataBuffer, producerContext, consumerContext, lastConsumedValue);
-                data++;
+                seqNumberOfLastConsumedMsg = writeAndWait(dataBuffer, producerContext, consumerContext, data, seqNumberOfLastConsumedMsg);
                 printStatus(data);
+                data++;
 
-            } while (!allMessagesAreWritten(data, startTime));
+            }
 
             files.close();
         }
         catch (Exception exp) {
-            System.out.println(exp);
+            System.out.println("Exception in run " + exp);
         }
+    }
+
+    long writeAndWait(MappedByteBuffer dataBuffer, MappedByteBuffer producerContext, MappedByteBuffer consumerContext, int data, long lastConsumedValue) {
+        writeNextMsg(dataBuffer, producerContext, data);
+        lastConsumedValue = hasConsumerRead(dataBuffer, producerContext, consumerContext, lastConsumedValue);
+        return lastConsumedValue;
+    }
+
+    private void writeNextMsg(MappedByteBuffer dataBuffer, MappedByteBuffer producerContext, int data) {
+        dataBuffer.putLong(data);    //write data to shared buffer
+        VarHandle.storeStoreFence(); // This is for non-Intel-Architecture
+        producerContext.putLong(data); //seq number that should be consumed by the reader
+        this.producerFlush = data;  //ensure data is pushed to cache
     }
 
     private long hasConsumerRead(MappedByteBuffer dataBuffer, MappedByteBuffer producerContext, MappedByteBuffer consumerBuffer, long lastConsumedValue) {
@@ -62,7 +70,7 @@ public class MMapFileWriter {
     }
 
     private boolean allMessagesAreWritten(int data, long startTime) {
-        if (data >= Files.SIZE) {
+        if (data > Files.SIZE) {
             System.out.println("Completed in " + ((System.nanoTime() - startTime) / 1_000_000) + " ms");
             return true;
         }
