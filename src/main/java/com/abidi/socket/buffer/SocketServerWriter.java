@@ -11,30 +11,44 @@ import static java.util.stream.IntStream.rangeClosed;
 public class SocketServerWriter {
 
     public static final int SIZE = 10_000_000;
+    private Messages messages;
+    private ServerSocket socketServer;
+    private OutputStream outputStream;
+
 
     public static void main(String[] args) throws IOException {
-
-        new SocketServerWriter().run();
+        SocketServerWriter socketServerWriter = new SocketServerWriter();
+        socketServerWriter.startServer();
+        socketServerWriter.startWriting();
     }
 
+    void startServer() {
+        try {
 
-    private void run() throws IOException {
+            messages = new Messages(SIZE);
+            messages.init();
+            System.out.println("Socket server started ...");
+            socketServer = new ServerSocket(9500);
+            Socket clientSocket = socketServer.accept();
+            outputStream = clientSocket.getOutputStream();
+            System.out.println("Client connected ...");
+        }
+        catch (Exception exp) {
+            System.out.println("Failed to start writer" + exp);
+        }
+    }
 
-        Messages messages = new Messages(SIZE);
-        messages.init();
-
-        System.out.println("Socket server started ...");
-        ServerSocket socketServer = new ServerSocket(9500);
-        Socket clientSocket = socketServer.accept();
-        OutputStream outputStream = clientSocket.getOutputStream();
-        System.out.println("Client connected ...");
-
+    private void startWriting() {
         long startTime = nanoTime();
-        rangeClosed(1, SIZE).forEach(i -> write(messages.nextMsg(), outputStream, i));
+        rangeClosed(1, SIZE).forEach(i -> write(nextMsg(), i));
         System.out.println("Completed writing in :" + (nanoTime() - startTime) / 1_000_000 + " ms");
     }
 
-    private void write(byte[] b, OutputStream outputStream, int count) {
+    byte[] nextMsg() {
+        return messages.nextMsg();
+    }
+
+    void write(byte[] b, int count) {
         try {
             outputStream.write(b);
             printStatus(count, b);
@@ -46,7 +60,12 @@ public class SocketServerWriter {
 
     private void printStatus(int msgCount, final byte data[]) {
         if (msgCount % 1_000_000 == 0) {
-            System.out.println("Written " + msgCount / 1_000_000 + "M messages,  last msg written is " +ByteBufferUtil.bytesToLong(data));
+            System.out.println("Written " + msgCount / 1_000_000 + "M messages,  last msg written is " + ByteBufferUtil.bytesToLong(data));
         }
+    }
+
+    public void stop() throws IOException {
+        socketServer.close();
+        outputStream.close();
     }
 }
