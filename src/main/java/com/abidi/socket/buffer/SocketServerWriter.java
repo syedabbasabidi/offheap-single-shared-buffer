@@ -1,5 +1,7 @@
 package com.abidi.socket.buffer;
 
+import com.abidi.mmf.singlebuff.Files;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -10,7 +12,7 @@ import static java.util.stream.IntStream.rangeClosed;
 
 public class SocketServerWriter {
 
-    public static final int SIZE = 10_000_000;
+    public static final int SIZE = Files.SIZE;
     private Messages messages;
     private ServerSocket socketServer;
     private OutputStream outputStream;

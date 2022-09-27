@@ -16,9 +16,9 @@ public class SocketWriterBenchmark implements JLBHTask {
 
         JLBHOptions jlbhOptions = new JLBHOptions().
                 throughput(SocketServerWriter.SIZE).
-                iterations(1_000_000 - 1_000).
+                iterations(10_000_000 - 1_000).
                 warmUpIterations(10_000).
-                recordOSJitter(true).
+                recordOSJitter(false).
                 runs(10).jlbhTask(new SocketWriterBenchmark());
 
         new JLBH(jlbhOptions).start();

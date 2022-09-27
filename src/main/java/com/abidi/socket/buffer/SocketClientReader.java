@@ -1,5 +1,7 @@
 package com.abidi.socket.buffer;
 
+import com.abidi.mmf.singlebuff.Files;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -9,7 +11,7 @@ import static java.util.stream.IntStream.rangeClosed;
 
 public class SocketClientReader {
 
-    public static final int SIZE = 10_000_000;
+    public static final int SIZE = Files.SIZE;
     private final byte[] bytes = new byte[8];
 
     public static void main(String[] args) throws IOException {

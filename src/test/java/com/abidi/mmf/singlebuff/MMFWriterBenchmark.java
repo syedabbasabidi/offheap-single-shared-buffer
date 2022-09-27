@@ -20,7 +20,7 @@ public class MMFWriterBenchmark implements JLBHTask {
 
     public static void main(String[] args) {
 
-        JLBHOptions jlbhOptions = new JLBHOptions().throughput(100_000_000).recordOSJitter(true)
+        JLBHOptions jlbhOptions = new JLBHOptions().throughput(100_000_000).recordOSJitter(false)
                 .iterations(10_000_000 - 1000).runs(10).warmUpIterations(10_000)
                 .jlbhTask(new MMFWriterBenchmark());
 
